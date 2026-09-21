@@ -85,8 +85,8 @@ Do not print the secret, pass it in a command string, or commit the keystore.
 If your app uses a Firebase-backed plugin (such as [`nativephp/mobile-firebase`](https://nativephp.com/plugins/nativephp/mobile-firebase)), it needs `google-services.json` and/or `GoogleService-Info.plist` at build time. Never commit these files — they contain your Firebase project's client configuration. Instead, base64-encode them and store them as GitHub Secrets, the same way as the signing keystore:
 
 ```bash
-base64 -w 0 google-services.json > google-services.json.base64
-base64 -w 0 GoogleService-Info.plist > GoogleService-Info.plist.base64
+base64 google-services.json | tr -d '\n' > google-services.json.base64
+base64 GoogleService-Info.plist | tr -d '\n' > GoogleService-Info.plist.base64
 ```
 
 Save the encoded contents as `GOOGLE_SERVICES_JSON` and `GOOGLE_SERVICE_INFO_PLIST` GitHub Secrets, then pass them to the Action:

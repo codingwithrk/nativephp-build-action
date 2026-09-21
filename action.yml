@@ -212,17 +212,22 @@ runs:
             base64 -D
           fi
         }
+        resolve_safe_path() {
+          BASE_DIR="$(pwd)" TARGET_PATH="$1" node "${{ github.action_path }}/scripts/resolve-safe-path.mjs"
+        }
         if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ]; then
-          mkdir -p "$(dirname "$GOOGLE_SERVICES_JSON_PATH")"
-          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | decode_base64 > "$GOOGLE_SERVICES_JSON_PATH"
-          test -s "$GOOGLE_SERVICES_JSON_PATH"
-          echo "Decoded google-services.json to $GOOGLE_SERVICES_JSON_PATH"
+          resolved_path="$(resolve_safe_path "$GOOGLE_SERVICES_JSON_PATH")"
+          mkdir -p "$(dirname "$resolved_path")"
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | decode_base64 > "$resolved_path"
+          test -s "$resolved_path"
+          echo "Decoded google-services.json to $resolved_path"
         fi
         if [ -n "$GOOGLE_SERVICE_INFO_PLIST_BASE64" ]; then
-          mkdir -p "$(dirname "$GOOGLE_SERVICE_INFO_PLIST_PATH")"
-          printf '%s' "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | decode_base64 > "$GOOGLE_SERVICE_INFO_PLIST_PATH"
-          test -s "$GOOGLE_SERVICE_INFO_PLIST_PATH"
-          echo "Decoded GoogleService-Info.plist to $GOOGLE_SERVICE_INFO_PLIST_PATH"
+          resolved_path="$(resolve_safe_path "$GOOGLE_SERVICE_INFO_PLIST_PATH")"
+          mkdir -p "$(dirname "$resolved_path")"
+          printf '%s' "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | decode_base64 > "$resolved_path"
+          test -s "$resolved_path"
+          echo "Decoded GoogleService-Info.plist to $resolved_path"
         fi
 
     - name: Prepare NativePHP project
@@ -393,4 +398,14 @@ runs:
       if: ${{ always() && (inputs.google-services-json != '' || inputs.google-service-info-plist != '') }}
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: rm -f "${{ inputs.google-services-json-path }}" "${{ inputs.google-service-info-plist-path }}"
+      env:
+        GOOGLE_SERVICES_JSON_PATH: ${{ inputs.google-services-json-path }}
+        GOOGLE_SERVICE_INFO_PLIST_PATH: ${{ inputs.google-service-info-plist-path }}
+      run: |
+        set +e
+        resolve_safe_path() {
+          BASE_DIR="$(pwd)" TARGET_PATH="$1" node "${{ github.action_path }}/scripts/resolve-safe-path.mjs" 2>/dev/null
+        }
+        resolved_path="$(resolve_safe_path "$GOOGLE_SERVICES_JSON_PATH")" && rm -f "$resolved_path"
+        resolved_path="$(resolve_safe_path "$GOOGLE_SERVICE_INFO_PLIST_PATH")" && rm -f "$resolved_path"
+        exit 0
